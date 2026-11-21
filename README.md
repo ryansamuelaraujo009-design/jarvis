@@ -45,7 +45,7 @@ npm start
 2. O reator aparece no canto superior direito e já começa ouvindo.
 3. Diga **“o papai chegou”** ou **“acorda criança”** para iniciar a conversa.
 4. Enquanto a conversa está ativa (60 segundos), fale normalmente — ele responde por voz.
-5. Diga **“pare”**, **“silêncio”** ou **“encerrar”** para sair do modo conversa.
+5. Diga **“pare”**, **“silêncio”** ou **“para de falar”** para sair do modo conversa. Para fechar o app, use **“fechar assistente”** ou o atalho `Ctrl+Shift+Q`.
 
 Atalhos:
 
@@ -115,7 +115,9 @@ npm test
 npm run train
 ```
 
-São **56 testes**: 32 do interpretador, 10 do cérebro, 1 do parser de busca e 13 de normalização/ativação de voz.
+São **60 testes**: 35 do interpretador, 11 do cérebro, 1 do parser de busca e 13 de normalização/ativação de voz.
+
+Para rodar no GitHub Actions, copie `ci/verificar.yml` para `.github/workflows/verificar.yml` e faça commit com um token que tenha o escopo `workflow`.
 
 ## Limites
 

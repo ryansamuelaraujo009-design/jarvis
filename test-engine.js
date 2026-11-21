@@ -24,6 +24,7 @@ const cases = [
   ['aperte ctrl c', (r) => r.action?.type === 'hotkey' && r.action.payload.keys === '^c'],
   ['anote comprar cafe', (r) => r.write?.store === 'notes'],
   ['criar tarefa estudar CSS', (r) => r.write?.store === 'tasks'],
+  ['crie uma tarefa estudar SEO', (r) => r.write?.store === 'tasks' && /seo/i.test(r.write.item.text)],
   ['listar tarefas', (r) => r.data?.type === 'tasksList'],
   ['explicar javascript', (r) => r.reply.includes('JavaScript') && !r.webSearch],
   ['como vender sites', (r) => r.reply.includes('três planos')],

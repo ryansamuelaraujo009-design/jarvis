@@ -69,6 +69,14 @@ const cases = [
     assert.ok(brain.handleDirect('esqueça cor favorita').reply.includes('Esquecido'));
   }],
 
+  ['esqueça com termo curto não apaga memória', () => {
+    brain.handleDirect('lembre que cor favorita é verde');
+    const antes = brain.status().facts;
+    const resultado = brain.handleDirect('esqueça a');
+    assert.ok(resultado.reply.includes('termo maior'), resultado.reply);
+    assert.strictEqual(brain.status().facts, antes);
+  }],
+
   ['limpar memória zera tudo', () => {
     assert.ok(brain.clearMemory().removed > 0);
     assert.strictEqual(brain.status().webLearned, 0);

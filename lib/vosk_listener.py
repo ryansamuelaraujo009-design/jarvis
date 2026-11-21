@@ -16,17 +16,18 @@ model = Model(sys.argv[1])
 recognizer = KaldiRecognizer(model, SAMPLE_RATE)
 recognizer.SetWords(True)
 muted = False
+mute_requested = False
 
 
 def read_commands():
     """MUTE/UNMUTE vindos do Node, sem depender de select() no Windows."""
-    global muted
+    global mute_requested
     for line in sys.stdin:
         command = line.strip().upper()
         if command == "MUTE":
-            muted = True
+            mute_requested = True
         elif command == "UNMUTE":
-            muted = False
+            mute_requested = False
 
 
 threading.Thread(target=read_commands, daemon=True).start()
@@ -60,6 +61,18 @@ def clean_audio(indata):
 
 
 def callback(indata, frames, time_info, status):
+    global muted
+    # A transição é aplicada na thread de áudio: o recognizer não é
+    # thread-safe. Sem o Reset(), a hipótese parcial anterior fica presa e
+    # volta junto com o eco da resposta quando o microfone é reativado.
+    if mute_requested != muted:
+        muted = mute_requested
+        if muted:
+            recognizer.Reset()
+            try:
+                recognizer.PartialResult()
+            except Exception:
+                pass
     if muted:
         return
 

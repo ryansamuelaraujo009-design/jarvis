@@ -15,6 +15,7 @@ const websearch = require('./lib/websearch');
 
 let hologram = null;
 let listening = false;
+let voiceEnabled = true;
 let conversationTimer = null;
 let wakePrimed = false;
 let lastWeakAt = 0;
@@ -58,10 +59,12 @@ function setActive(value) {
   pushState();
 }
 
-function answer(text) {
-  tts.speak(text);
+function answer(text, options = {}) {
+  const falar = options.forceSpeak || voiceEnabled;
+  if (falar) tts.speak(text);
+  else tts.stop();
   conversation.lastReply = text;
-  pushState({ caption: text.slice(0, 90), speaking: true });
+  pushState({ caption: text.slice(0, 90), speaking: falar });
 }
 
 function applyWrite(write) {
@@ -126,7 +129,10 @@ async function respondTo(raw) {
   clearTimeout(conversationTimer);
   pushState({ caption: `Você: ${text}`, speaking: false, listening: true });
 
-  if (/^(pare|para|espera|silencio|silêncio|cancelar|pare de falar)$/.test(engine.norm(text))) {
+  // brain.norm remove acentos e pontuação: "pare.", "silêncio!",
+  // "tudo bem, para de falar" e "canalize" também interrompem a fala.
+  // A âncora evita capturar "para que serve o git" como comando de parada.
+  if (/^(?:tudo bem|ok|agora)?\s*(?:pare|para|espera|silencio|basta|canalize|cancelar)(?:\s+de\s+falar)?$/.test(brain.norm(text))) {
     tts.stop();
     setActive(false);
     answer(`Tudo bem. ${WAKE_HINT} quando quiser.`);
@@ -147,7 +153,13 @@ async function respondTo(raw) {
     return;
   }
 
-  if (parsed.setting) store.settings().set(parsed.setting);
+  const setting = parsed.setting;
+  if (setting) {
+    store.settings().set(setting);
+    // Antes essas chaves eram só salvas: o assistente dizia "Microfone
+    // desligado" mas continuava ouvindo / falando. Agora aplicamos de fato.
+    if ('microphoneMuted' in setting) toggleListening(!setting.microphoneMuted, true);
+  }
   applyWrite(parsed.write);
 
   let spoken = parsed.reply || '';
@@ -178,6 +190,10 @@ async function respondTo(raw) {
             hologram.focus();
           }
         }
+      } else {
+        // Antes a ação era silenciosamente ignorada enquanto a fala dizia
+        // "Vou bloquear o Windows". Nunca afirmar que executou algo que não foi.
+        spoken += ' Essa ação pede confirmação e não foi executada.';
       }
     }
   }
@@ -210,7 +226,18 @@ async function respondTo(raw) {
   }
 
   if (brain.isEnabled()) brain.recordInteraction(text, spoken);
-  answer(spoken);
+
+  if (setting && 'voiceEnabled' in setting) {
+    const next = Boolean(setting.voiceEnabled);
+    // Se o comando foi "desativar voz", fala a confirmação uma última vez
+    // e só então silencia — o usuário precisa saber que o comando funcionou.
+    const confirmaSilencio = voiceEnabled && !next;
+    voiceEnabled = next;
+    if (!next && !confirmaSilencio) tts.stop();
+    answer(spoken, { forceSpeak: confirmaSilencio });
+  } else {
+    answer(spoken);
+  }
   setActive(true);
 }
 
@@ -336,12 +363,30 @@ function registerSpeech() {
     console.error('[VOSK]', message);
     pushState({ caption: `Vosk: ${String(message).slice(0, 60)}` });
   });
-  speech.on('status', (state) => pushState({ listening: state.running && listening }));
+  speech.on('status', (state) => {
+    // Se o reconhecedor desistiu (running:false), a variável de controle
+    // também precisa cair — senão o próximo clique desliga algo já desligado.
+    if (!state.running) {
+      listening = false;
+      wakePrimed = false;
+    }
+    pushState({ listening: state.running && listening });
+  });
 }
 
 app.whenReady().then(() => {
   brain.attachPersistence({ load: () => store.brainMemory().get(), save: (data) => store.brainMemory().set(data) });
-  brain.setEnabled(Boolean(store.settings().get().brain?.enabled ?? true));
+  // O comando por voz salva em brain.json; o boot antes lia só settings.json
+  // e reativava o cérebro contra a vontade do usuário a cada reinício.
+  const savedBrain = store.brainMemory().get();
+  const brainAtivo = typeof savedBrain.profile?.enabled === 'boolean'
+    ? savedBrain.profile.enabled
+    : Boolean(store.settings().get().brain?.enabled ?? true);
+  brain.setEnabled(brainAtivo);
+  store.settings().set({ brain: { enabled: brainAtivo } });
+
+  const settingsIniciais = store.settings().get();
+  voiceEnabled = Boolean(settingsIniciais.voiceEnabled ?? true);
   createWindow();
   registerIpc();
   registerSpeech();
@@ -354,9 +399,10 @@ app.whenReady().then(() => {
   globalShortcut.register('Control+Shift+J', () => toggleListening());
   globalShortcut.register('Control+Shift+Q', () => app.quit());
 
-  // Começa ouvindo automaticamente: o usuário só precisa dizer uma frase de ativação.
-  toggleListening(true, true);
-  pushState({ caption: WAKE_HINT });
+  // Começa ouvindo automaticamente, exceto se o usuário já tiver desligado
+  // o microfone por voz — a preferência precisa sobreviver ao reinício.
+  toggleListening(!Boolean(settingsIniciais.microphoneMuted), true);
+  if (listening) pushState({ caption: WAKE_HINT });
 });
 
 app.on('window-all-closed', () => {
