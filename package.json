@@ -1,0 +1,19 @@
+{
+  "name": "jarvis-voice",
+  "version": "1.0.0",
+  "private": true,
+  "description": "J.A.R.V.I.S. — assistente de voz local com holograma compacto",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check main.js && node --check preload.js && node --check train-brain.js && node --check lib/store.js && node --check lib/brain.js && node --check lib/training-data.js && node --check lib/websearch.js && node --check lib/engine.js && node --check lib/actions.js && node --check lib/speech.js && node --check lib/speech-normalize.js && node --check lib/wake.js && node --check lib/tts.js && node --check src/renderer.js",
+    "test": "node test-engine.js && node test-brain.js && node test-websearch.js && node test-speech.js",
+    "train": "node train-brain.js"
+  },
+  "devDependencies": {
+    "electron": "^35.0.0"
+  },
+  "allowScripts": {
+    "electron@35.7.5": true
+  }
+}

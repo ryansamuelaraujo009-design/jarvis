@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>J.A.R.V.I.S. Holograma</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="hologram off" id="hologram" title="Clique para ligar/desligar · Botão direito para opções">
+    <div class="grid"></div>
+    <div class="frame"><i></i><i></i><i></i><i></i></div>
+
+    <div class="ring ring-outer"></div>
+    <div class="ring ring-mid"></div>
+    <div class="ring ring-inner"></div>
+    <div class="scan"></div>
+    <div class="ticks"></div>
+    <div class="arcs"></div>
+
+    <div class="core" id="reactor">
+      <div class="hex">
+        <div class="eye"><span></span></div>
+      </div>
+    </div>
+
+    <div class="readout">
+      <span class="name">J.A.R.V.I.S.</span>
+      <span class="signal" id="signal">SIGNAL 00</span>
+    </div>
+
+    <div class="wave" id="wave">
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+
+    <div class="caption" id="caption">Iniciando núcleo...</div>
+    <div class="badge" id="badge">OFF</div>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>
