@@ -40,7 +40,9 @@ const cases = [
   ['quanto e quinze mais vinte e cinco', (r) => r.reply.includes('40')],
   ['quanto e o dobro de doze', (r) => r.reply.includes('24')],
   ['como funciona o flexbox', (r) => r.reply.includes('Flexbox') && !r.webSearch],
-  ['para que serve o git', (r) => r.reply.includes('Git') && !r.webSearch]
+  ['para que serve o git', (r) => r.reply.includes('Git') && !r.webSearch],
+  ['explique css', (r) => r.reply.includes('CSS') && !r.webSearch],
+  ['me explique grid', (r) => r.reply.includes('Grid') && !r.webSearch]
 ];
 
 let failures = 0;
